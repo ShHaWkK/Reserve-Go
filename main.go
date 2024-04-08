@@ -59,6 +59,11 @@ func connectToDB() (*sql.DB, error) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
+<<<<<<< HEAD
+=======
+		os.Getenv("DB_HOST"), // Assume DB_HOST environment variable is set to your MySQL host, e.g., "localhost"
+		os.Getenv("DB_PORT"), // Assume DB_PORT environment variable is set to your MySQL port, e.g., "3306"
+>>>>>>> 1e3df987665b48a1dd65eb3c56ecb289cd1edd7c
 		os.Getenv("DB_NAME"),
 	)
 
