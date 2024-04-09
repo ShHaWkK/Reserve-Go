@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
 	"strings"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Structure Room
@@ -27,6 +29,12 @@ type Reservation struct {
 }
 
 func main() {
+	// Connexion à la base de données
+	db, err := connectToDB()
+	if err != nil {
+		log.Fatal("Erreur lors de la connexion à la base de données:", err)
+	}
+	defer db.Close()
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -36,16 +44,15 @@ func main() {
 		scanner.Scan()
 		choice := scanner.Text()
 
-		// Traitement de l'option choisie
 		switch choice {
 		case "1":
-			listRooms()
+			listRooms(db)
 		case "2":
-			createReservation()
+			createReservation(db, scanner)
 		case "3":
-			cancelReservation()
+			cancelReservation(db, scanner)
 		case "4":
-			viewReservations()
+			viewReservations(db)
 		case "5":
 			fmt.Println("Merci d'avoir utilisé le service. À bientôt !")
 			return
@@ -56,23 +63,33 @@ func main() {
 }
 
 func connectToDB() (*sql.DB, error) {
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-<<<<<<< HEAD
-=======
-		os.Getenv("DB_HOST"), // Assume DB_HOST environment variable is set to your MySQL host, e.g., "localhost"
-		os.Getenv("DB_PORT"), // Assume DB_PORT environment variable is set to your MySQL port, e.g., "3306"
->>>>>>> 1e3df987665b48a1dd65eb3c56ecb289cd1edd7c
-		os.Getenv("DB_NAME"),
-	)
+	var db *sql.DB
+	var err error
 
-	db, err := sql.Open("mysql", connectionString)
-	if err != nil {
-		return nil, fmt.Errorf("error opening database connection: %v", err)
+	for i := 0; i < 5; i++ { // Réessayer 5 fois
+		connectionString := fmt.Sprintf("%s:%s@tcp(mysql:3306)/%s?parseTime=true",
+			"root", // ou vos variables d'environnement
+			"rootpassword",
+			"projetgo",
+		)
+
+		db, err = sql.Open("mysql", connectionString)
+		if err != nil {
+			log.Printf("Failed to open database connection: %v", err)
+			time.Sleep(2 * time.Second) // Attendre 2 secondes avant de réessayer
+			continue
+		}
+
+		err = db.Ping()
+		if err == nil {
+			break
+		}
+
+		log.Printf("Failed to ping database: %v", err)
+		time.Sleep(2 * time.Second)
 	}
 
-	if err := db.Ping(); err != nil {
+	if err != nil {
 		return nil, fmt.Errorf("error verifying connection to the database: %v", err)
 	}
 
@@ -94,21 +111,70 @@ func showMenu() {
 	fmt.Print("\nChoisissez une option : ")
 }
 
-func listRooms() {
+func listRooms(db *sql.DB) {
 	fmt.Println("Liste des salles disponibles...")
-
+	// Implémentez la logique pour lister les salles disponibles
 }
 
-func createReservation() {
+func createReservation(db *sql.DB, scanner *bufio.Scanner) {
 	fmt.Println("Création d'une réservation...")
+	fmt.Println("----------------------------------")
 
+	fmt.Println("Entrez l'ID de la salle :")
+	scanner.Scan()
+	roomID := scanner.Text()
+
+	fmt.Println("Entrez la date de réservation (YYYY-MM-DD) :")
+	scanner.Scan()
+	date := scanner.Text()
+
+	fmt.Println("Entrez l'heure de début (HH:MM:SS) :")
+	scanner.Scan()
+	startTime := scanner.Text()
+
+	fmt.Println("Entrez l'heure de fin (HH:MM:SS) :")
+	scanner.Scan()
+	endTime := scanner.Text()
+
+	if isRoomAvailable(db, roomID, date, startTime, endTime) {
+		insertReservation(db, roomID, date, startTime, endTime)
+		fmt.Println("Réservation créée avec succès.")
+	} else {
+		fmt.Println("La salle n'est pas disponible pour le créneau demandé.")
+	}
 }
 
-func cancelReservation() {
+func isRoomAvailable(db *sql.DB, roomID, date, startTime, endTime string) bool {
+	// Écrivez la requête pour vérifier la disponibilité de la salle
+	query := `SELECT COUNT(*) FROM reservations WHERE room_id = ? AND date = ? AND 
+              NOT (start_time >= ? OR end_time <= ?)`
+
+	var count int
+	err := db.QueryRow(query, roomID, date, endTime, startTime).Scan(&count)
+	if err != nil {
+		log.Fatal("Erreur lors de la vérification de la disponibilité : ", err)
+	}
+
+	return count == 0
+}
+
+func insertReservation(db *sql.DB, roomID, date, startTime, endTime string) {
+	query := `INSERT INTO reservations (room_id, date, start_time, end_time) VALUES (?, ?, ?, ?)`
+
+	_, err := db.Exec(query, roomID, date, startTime, endTime)
+	if err != nil {
+		log.Fatal("Erreur lors de la création de la réservation : ", err)
+	}
+
+	fmt.Println("Réservation créée avec succès.")
+}
+
+func cancelReservation(db *sql.DB, scanner *bufio.Scanner) {
 	fmt.Println("Annulation d'une réservation...")
+	// Implémentez la logique pour annuler une réservation
 }
 
-func viewReservations() {
+func viewReservations(db *sql.DB) {
 	fmt.Println("Visualisation des réservations...")
-
+	// Implémentez la logique pour afficher les réservations
 }

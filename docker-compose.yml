@@ -7,8 +7,6 @@ services:
     tty: true
     ports:
       - "8087:8080"
-    env_file:
-      - .env
     depends_on:
       - mysql
 
@@ -18,8 +16,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./BDD.sql:/docker-entrypoint-initdb.d/BDD.sql
-    env_file:
-      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: projetgo
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
 
