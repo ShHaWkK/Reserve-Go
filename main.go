@@ -3,14 +3,18 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
+// ------------------------------------------------------//
 // Structure Room
 type Room struct {
 	ID       int
@@ -299,6 +303,7 @@ func listRooms(db *sql.DB) {
 	if err := rows.Err(); err != nil {
 		log.Printf("Erreur lors de l'itération sur les salles : %v", err)
 	}
+
 }
 
 func createReservation(db *sql.DB, scanner *bufio.Scanner) {
@@ -327,6 +332,7 @@ func createReservation(db *sql.DB, scanner *bufio.Scanner) {
 	} else {
 		fmt.Println("La salle n'est pas disponible pour le créneau demandé.")
 	}
+	navigationOptions(db, scanner)
 }
 
 func isRoomAvailable(db *sql.DB, roomID, date, startTime, endTime string) bool {
@@ -345,6 +351,12 @@ func isRoomAvailable(db *sql.DB, roomID, date, startTime, endTime string) bool {
 	return count == 0
 }
 
+func isRoomExists(db *sql.DB, roomID string) bool {
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM rooms WHERE id = ?)", roomID).Scan(&exists)
+	return err == nil && exists
+}
+
 func insertReservation(db *sql.DB, roomID, date, startTime, endTime string) {
 	query := `INSERT INTO reservations (room_id, date, start_time, end_time) VALUES (?, ?, ?, ?)`
 
@@ -354,14 +366,35 @@ func insertReservation(db *sql.DB, roomID, date, startTime, endTime string) {
 	} else {
 		fmt.Println("Réservation créée avec succès.")
 	}
+
 }
 
 func cancelReservation(db *sql.DB, scanner *bufio.Scanner) {
-	fmt.Println("Annulation d'une réservation...")
-	// Implémentez la logique pour annuler une réservation
+	fmt.Print("Entrez l'identifiant de la réservation à annuler : ")
+	scanner.Scan()
+	reservationID := scanner.Text()
+
+	// Vérification de l'existence de la réservation avant de tenter de l'annuler
+	if reservationExists(db, reservationID) {
+		err := deleteReservation(db, reservationID)
+		if err != nil {
+			fmt.Println("Erreur lors de l'annulation de la réservation :", err)
+		} else {
+			fmt.Println("Réservation annulée avec succès.")
+		}
+	} else {
+		fmt.Println("Aucune réservation trouvée avec cet identifiant.")
+	}
+	navigationOptions(db, scanner)
 }
 
-func viewReservations(db *sql.DB) {
+func deleteReservation(db *sql.DB, reservationID string) error {
+	query := "DELETE FROM reservations WHERE id = ?"
+	_, err := db.Exec(query, reservationID)
+	return err
+}
+
+func viewReservations(db *sql.DB, scanner *bufio.Scanner) {
 	fmt.Println("Visualisation des réservations:")
 
 	query := `SELECT r.id, r.room_id, r.date, r.start_time, r.end_time 
@@ -387,4 +420,56 @@ func viewReservations(db *sql.DB) {
 	if err := rows.Err(); err != nil {
 		log.Printf("Erreur lors de l'itération sur les réservations : %v", err)
 	}
+
+	// Offre des options de navigation après avoir visualisé les réservations.
+	navigationOptions(db, scanner)
+}
+
+/*
+* Vérification de l'existence d'une réservation
+ */
+func reservationExists(db *sql.DB, reservationID string) bool {
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM reservations WHERE id = ?)", reservationID).Scan(&exists)
+	if err != nil {
+		log.Printf("Erreur lors de la vérification de l'existence de la réservation: %v", err)
+		return false
+	}
+	return exists
+}
+
+/*
+* Exportatioon des réservations en JSON
+ */
+func exportReservationsAsJSON(db *sql.DB, filename string) error {
+	reservations, err := getAllReservations(db)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(reservations, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(filename, data, 0644)
+}
+
+func getAllReservations(db *sql.DB) ([]Reservation, error) {
+	var reservations []Reservation
+	query := "SELECT id, room_id, date, start_time, end_time FROM reservations"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r Reservation
+		if err := rows.Scan(&r.ID, &r.RoomID, &r.Date, &r.StartTime, &r.EndTime); err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, r)
+	}
+	return reservations, nil
 }
