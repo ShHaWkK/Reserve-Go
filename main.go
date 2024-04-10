@@ -27,13 +27,28 @@ type Reservation struct {
 	EndTime   string
 }
 
+const (
+	ColorRed   = "\033[31m"
+	ColorGreen = "\033[32m"
+	ColorBlue  = "\033[34m"
+	ColorReset = "\033[0m"
+)
+
+func colorLog(color, message string) {
+	fmt.Println(color, message, ColorReset)
+}
+
+//------------------------------------------------------//
+
 func main() {
 	// Connexion à la base de données
 	db, err := connectToDB()
 	if err != nil {
-		log.Fatal("Erreur lors de la connexion à la base de données:", err)
+		colorLog(ColorRed, "Erreur lors de la connexion à la base de données: "+err.Error())
+		return
 	}
 	defer db.Close()
+	colorLog(ColorGreen, "Connexion à la base de données réussie.")
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -47,19 +62,27 @@ func main() {
 		case "1":
 			listRooms(db)
 		case "2":
-			createReservation(db, scanner)
+			updateRoom(db, scanner)
 		case "3":
-			cancelReservation(db, scanner)
+			addRoom(db, scanner)
 		case "4":
-			viewReservations(db)
+			createReservation(db, scanner)
 		case "5":
+			cancelReservation(db, scanner)
+		case "6":
+			viewReservations(db, scanner)
+		case "7":
+			showHelp()
+		case "8":
 			fmt.Println("Merci d'avoir utilisé le service. À bientôt !")
 			return
 		default:
-			fmt.Println("Option non valide. Veuillez choisir une option entre 1 et 5.")
+			fmt.Println("Option non valide. Veuillez choisir une option entre 1 et 7.") // Mise à jour de ce message pour inclure toutes les options
 		}
 	}
 }
+
+//-----------------------		Connexion 		----------------------------//
 
 func connectToDB() (*sql.DB, error) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
@@ -81,28 +104,174 @@ func connectToDB() (*sql.DB, error) {
 	for i := 0; i < 10; i++ {
 		err = db.Ping()
 		if err == nil {
-			log.Println("Successfully connected to the database.")
+			colorLog(ColorGreen, "Successfully connected to the database.")
 			return db, nil
 		}
-		log.Printf("Failed to connect to the database, retrying in 1 second...")
+		colorLog(ColorRed, "Failed to connect to the database, retrying in 1 second...")
 		time.Sleep(1 * time.Second)
 	}
 
 	return nil, fmt.Errorf("error verifying connection to the database: %v", err)
 }
 
+// ----------------------- Affichage de Menu -----------------------//
 func showMenu() {
-	fmt.Print("\033[36m")
-	fmt.Println(strings.Repeat("-", 50))
-	fmt.Println("Bienvenue dans le Service de Réservation en Ligne")
-	fmt.Println(strings.Repeat("-", 50))
-	fmt.Print("\033[0m")
+	clearScreen()
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 50)))
+	fmt.Println(colorString(ColorGreen, "Bienvenue dans le Service de Réservation en Ligne"))
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 50)))
 	fmt.Println("1. Lister les salles disponibles")
-	fmt.Println("2. Créer une réservation")
-	fmt.Println("3. Annuler une réservation")
-	fmt.Println("4. Visualiser les réservations")
-	fmt.Println("5. Quitter")
+	fmt.Println("2. Modifier une salle")
+	fmt.Println("3. Créer une Salle ")
+	fmt.Println("4. Créer une réservation")
+	fmt.Println("5. Annuler une réservation")
+	fmt.Println("6. Visualiser les réservations")
+
+	fmt.Println("7. Aide")
+	fmt.Println("8. Quitter")
 	fmt.Print("\nChoisissez une option : ")
+}
+
+func showHelp() {
+	clearScreen()
+	fmt.Println(colorString(ColorGreen, "Aide :"))
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 25)))
+	fmt.Println("1. Lister les salles - Affiche toutes les salles disponibles.")
+	fmt.Println("2. Créer une réservation - Il faut entrer les informations nécessaires.")
+	fmt.Println("3. Annuler une réservation - Vous aurez besoin de l'ID de la réservation.")
+	fmt.Println("4. Visualiser les réservations - Pour voir les réservations existantes.")
+	fmt.Println("5. Quitter - Pour fermer l'application.")
+	fmt.Println("\nAppuyez sur 'Entrée' pour retourner au menu principal.")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+}
+
+// Fonction pour colorer le texte
+func colorString(color, message string) string {
+	return color + message + ColorReset
+}
+
+// Fonction pour effacer l'écran
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
+}
+
+/*
+*	Navigation
+ */
+func navigationOptions(db *sql.DB, scanner *bufio.Scanner) {
+	for {
+		fmt.Println("\n1. Retourner au menu principal")
+		fmt.Println("2. Quitter")
+		fmt.Print("\nChoisissez une option : ")
+
+		scanner.Scan()
+		choice := scanner.Text()
+
+		switch choice {
+		case "1":
+			return // Retour au menu principal
+		case "2":
+			fmt.Println("Merci d'avoir utilisé le service. À bientôt !")
+			os.Exit(0) // Quitter le programme
+		default:
+			fmt.Println("Option non valide. Veuillez choisir une option entre 1 et 2.")
+		}
+	}
+}
+
+/*
+* Créer  une salle
+ */
+func addRoom(db *sql.DB, scanner *bufio.Scanner) {
+	fmt.Println("Ajout d'une nouvelle salle...")
+
+	fmt.Println("Entrez le nom de la salle :")
+	scanner.Scan()
+	name := scanner.Text()
+
+	fmt.Println("Entrez la capacité de la salle :")
+	scanner.Scan()
+	capacity, err := strconv.Atoi(scanner.Text())
+	if err != nil {
+		log.Printf("Erreur : Capacité invalide. %v", err)
+		return
+	}
+
+	query := "INSERT INTO rooms (name, capacity) VALUES (?, ?)"
+	_, err = db.Exec(query, name, capacity)
+	if err != nil {
+		log.Printf("Erreur lors de l'ajout de la salle : %v", err)
+	} else {
+		fmt.Println("Salle ajoutée avec succès.")
+	}
+	navigationOptions(db, scanner)
+}
+
+/*
+* Lister les salles disponible
+ */
+func listAvailableRooms(db *sql.DB, date string, startTime string, endTime string) ([]Room, error) {
+	var rooms []Room
+
+	query := `SELECT id, name, capacity FROM rooms WHERE id NOT IN (
+				SELECT room_id FROM reservations WHERE date = ? AND NOT (end_time <= ? OR start_time >= ?)
+			) AND available = TRUE`
+	rows, err := db.Query(query, date, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var room Room
+		if err := rows.Scan(&room.ID, &room.Name, &room.Capacity); err != nil {
+			return rooms, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
+}
+
+/*
+* Modifier les salles
+ */
+
+func updateRoom(db *sql.DB, scanner *bufio.Scanner) {
+	fmt.Println("Modification d'une salle existante...")
+
+	fmt.Println("Entrez l'ID de la salle à modifier :")
+	scanner.Scan()
+	id, err := strconv.Atoi(scanner.Text())
+	if err != nil {
+		log.Printf("Erreur : ID invalide. %v", err)
+		return
+	}
+
+	fmt.Println("Entrez le nouveau nom (laissez vide pour ne pas modifier) :")
+	scanner.Scan()
+	name := scanner.Text()
+
+	fmt.Println("Entrez la nouvelle capacité (laissez vide pour ne pas modifier) :")
+	scanner.Scan()
+	capacityStr := scanner.Text()
+	var capacity int
+	if capacityStr != "" {
+		capacity, err = strconv.Atoi(capacityStr)
+		if err != nil {
+			log.Printf("Erreur : Capacité invalide. %v", err)
+			return
+		}
+	}
+
+	query := "UPDATE rooms SET name = COALESCE(NULLIF(?, ''), name), capacity = COALESCE(NULLIF(?, 0), capacity) WHERE id = ?"
+	_, err = db.Exec(query, name, capacity, id)
+	if err != nil {
+		log.Printf("Erreur lors de la modification de la salle : %v", err)
+	} else {
+		fmt.Println("Salle modifiée avec succès.")
+	}
+	navigationOptions(db, scanner)
 }
 
 func listRooms(db *sql.DB) {
@@ -110,10 +279,12 @@ func listRooms(db *sql.DB) {
 
 	query := "SELECT id, name, capacity FROM rooms"
 	rows, err := db.Query(query)
+
 	if err != nil {
 		log.Printf("Erreur lors de la récupération des salles : %v", err)
 		return
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
