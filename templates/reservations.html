@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des Réservations</title>
+</head>
+<body>
+<h1>Liste des Réservations</h1>
+{{range .}}
+<p>ID Réservation: {{.ID}}, Salle: {{.RoomID}}, Date: {{.Date}}, Heure de début: {{.StartTime}}, Heure de fin: {{.EndTime}}</p>
+{{else}}
+<p>Aucune réservation trouvée.</p>
+{{end}}
+<a href="/">Retour à l'accueil</a>
+</body>
+</html>
