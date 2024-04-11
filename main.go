@@ -48,6 +48,7 @@ func main() {
 	http.HandleFunc("/room/modify", modifyReservationHandler(db))
 	http.HandleFunc("/room/delete", deleteReservationHandler(db))
 	http.HandleFunc("/room/list", listRoomsHandler(db))
+	http.HandleFunc("/reservations_by_room", reservationsByRoomHandler(db))
 
 	log.Println("Démarrage du serveur sur le port :8095")
 	log.Fatal(http.ListenAndServe(":8095", nil))
@@ -349,4 +350,47 @@ func getAllRooms(db *sql.DB) ([]Room, error) {
 	}
 
 	return rooms, nil
+}
+
+func reservationsByRoomHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			roomID := r.URL.Query().Get("roomID")
+			reservations, err := getReservationsByRoom(db, roomID)
+			if err != nil {
+				http.Error(w, "Erreur lors de la récupération des réservations", http.StatusInternalServerError)
+				return
+			}
+			executeTemplate(w, "reservations_by_room.html", reservations)
+		} else {
+			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+// Fonction pour récupérer les réservations par salle depuis la base de données
+func getReservationsByRoom(db *sql.DB, roomID string) ([]Reservation, error) {
+	var reservations []Reservation
+
+	query := "SELECT id, room_id, date, start_time, end_time FROM reservations WHERE room_id = ?"
+
+	rows, err := db.Query(query, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r Reservation
+		if err := rows.Scan(&r.ID, &r.RoomID, &r.Date, &r.StartTime, &r.EndTime); err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return reservations, nil
 }

@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>Supprimer Réservation</title>
 </head>
 <body>
-$END$
+<h1>Supprimer une Réservation</h1>
+<form method="POST" action="/room/delete">
+    <label for="reservationID">ID de Réservation:</label>
+    <input type="number" id="reservationID" name="id" required><br>
+    <input type="submit" value="Supprimer Réservation">
+</form>
 </body>
 </html>
