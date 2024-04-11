@@ -1,5 +1,6 @@
 package main
 
+//-------------------------- IMPORT --------------------------//
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
@@ -23,8 +24,10 @@ type Reservation struct {
 	EndTime   string
 }
 
+//-------------------------- CONNEXION --------------------------//
+
 func connectToDB() (*sql.DB, error) {
-	db, err := sql.Open("mysql", "username:password@tcp(localhost:3306)/database_name")
+	db, err := sql.Open("mysql", "user:password@tcp(localhost:3306)/projetgo")
 	if err != nil {
 		return nil, err
 	}
@@ -34,22 +37,23 @@ func connectToDB() (*sql.DB, error) {
 func main() {
 	db, err := connectToDB()
 	if err != nil {
-		log.Fatal("Erreur lors de la connexion à la base de données:", err)
+		log.Fatalf("Erreur lors de la connexion à la base de données: %v", err)
 	}
 	defer db.Close()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		executeTemplate(w, "home.html", nil)
-	})
-
+	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/reservations", reservationHandler(db))
-	http.HandleFunc("/reservations/add-room", addRoomHandler(db))
-	http.HandleFunc("/modify-reservation", modifyReservationHandler(db))
-	http.HandleFunc("/delete-reservation", deleteReservationHandler(db))
+	http.HandleFunc("/room/add", addRoomHandler(db))
+	http.HandleFunc("/reservations/add", addReservationHandler(db))
+	http.HandleFunc("/room/modify", modifyReservationHandler(db))
+	http.HandleFunc("/room/delete", deleteReservationHandler(db))
+	http.HandleFunc("/room/list", listRoomsHandler(db))
 
-	// Démarrage du serveur
-	log.Println("Démarrage du serveur sur :8095")
+	log.Println("Démarrage du serveur sur le port :8095")
 	log.Fatal(http.ListenAndServe(":8095", nil))
+}
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	executeTemplate(w, "home.html", nil)
 }
 
 // reservationHandler gère les réservations.
@@ -96,6 +100,9 @@ func reservationHandler(db *sql.DB) http.HandlerFunc {
 		}
 	}
 }
+
+//-------------------------- IsRoomAvailable --------------------------//
+
 func isRoomAvailable(db *sql.DB, roomID int, date, startTime, endTime string) bool {
 	var count int
 	query := `SELECT COUNT(*) FROM reservations 
@@ -110,6 +117,9 @@ func isRoomAvailable(db *sql.DB, roomID int, date, startTime, endTime string) bo
 	}
 	return count == 0
 }
+
+//-------------------------- IsRoomAvailable --------------------------//
+
 func insertReservation(db *sql.DB, roomID int, date, startTime, endTime string) error {
 	query := `INSERT INTO reservations (room_id, date, start_time, end_time) 
               VALUES (?, ?, ?, ?)`
@@ -121,6 +131,40 @@ func insertReservation(db *sql.DB, roomID int, date, startTime, endTime string) 
 	}
 	return nil
 }
+
+func addReservationHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+
+			executeTemplate(w, "add_reservation.html", nil)
+
+		case "POST":
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Error processing form", http.StatusBadRequest)
+				return
+			}
+			roomID, _ := strconv.Atoi(r.FormValue("roomID"))
+			date := r.FormValue("date")
+			startTime := r.FormValue("startTime")
+			endTime := r.FormValue("endTime")
+
+			if isRoomAvailable(db, roomID, date, startTime, endTime) {
+				if err := insertReservation(db, roomID, date, startTime, endTime); err != nil {
+					http.Error(w, "Error creating reservation", http.StatusInternalServerError)
+					return
+				}
+				http.Redirect(w, r, "/reservations", http.StatusSeeOther)
+			} else {
+				http.Error(w, "Room is not available", http.StatusBadRequest)
+			}
+
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
 func getAllReservations(db *sql.DB) ([]Reservation, error) {
 	var reservations []Reservation
 	query := "SELECT id, room_id, date, start_time, end_time FROM reservations"
@@ -151,29 +195,57 @@ func executeTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 
 func addRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
+		if r.Method == "GET" {
+			executeTemplate(w, "add_room.html", nil)
+			return
+		} else if r.Method == "POST" {
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Erreur lors du traitement du formulaire", http.StatusBadRequest)
 				return
 			}
 			name := r.FormValue("name")
-			capacity, err := strconv.Atoi(r.FormValue("capacity"))
+			capacityStr := r.FormValue("capacity")
+			if name == "" || capacityStr == "" {
+				http.Error(w, "Le nom et la capacité de la salle sont requis.", http.StatusBadRequest)
+				return
+			}
+			capacity, err := strconv.Atoi(capacityStr)
 			if err != nil {
 				http.Error(w, "Capacité invalide", http.StatusBadRequest)
 				return
 			}
-			query := "INSERT INTO rooms (name, capacity) VALUES (?, ?)"
-			_, err = db.Exec(query, name, capacity)
+
+			// Check if the room already exists
+			var existingRoomId int
+			checkQuery := "SELECT id FROM rooms WHERE name = ? LIMIT 1"
+			err = db.QueryRow(checkQuery, name).Scan(&existingRoomId)
+
+			if err != nil && err != sql.ErrNoRows {
+				http.Error(w, "Erreur lors de la vérification de l'existence de la salle", http.StatusInternalServerError)
+				return
+			}
+
+			if existingRoomId > 0 {
+				http.Error(w, "Une salle avec le même nom existe déjà", http.StatusBadRequest)
+				return
+			}
+
+			// Proceed to insert the room if it does not exist
+			insertQuery := "INSERT INTO rooms (name, capacity) VALUES (?, ?)"
+			_, err = db.Exec(insertQuery, name, capacity)
 			if err != nil {
 				http.Error(w, "Erreur lors de l'ajout de la salle", http.StatusInternalServerError)
 				return
 			}
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+
+			http.Redirect(w, r, "/room/list", http.StatusSeeOther)
+			return
 		} else {
-			executeTemplate(w, "add_room.html", nil)
+			http.Error(w, "Méthode HTTP non autorisée", http.StatusMethodNotAllowed)
 		}
 	}
 }
+
 func deleteReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -191,7 +263,6 @@ func deleteReservationHandler(db *sql.DB) http.HandlerFunc {
 func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			// Traiter le formulaire de modification
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Erreur lors du traitement du formulaire", http.StatusBadRequest)
 				return
@@ -213,7 +284,6 @@ func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 			newStartTime := r.FormValue("newStartTime")
 			newEndTime := r.FormValue("newEndTime")
 
-			// Vérifiez si la nouvelle salle est disponible pour le nouveau créneau
 			if isRoomAvailable(db, newRoomID, newDate, newStartTime, newEndTime) {
 				query := `UPDATE reservations SET room_id = ?, date = ?, start_time = ?, end_time = ? WHERE id = ?`
 				_, err = db.Exec(query, newRoomID, newDate, newStartTime, newEndTime, reservationID)
@@ -227,7 +297,56 @@ func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 			}
 
 		} else {
-			// Afficher le formulaire de modification (pour simplifier, on ne le montre pas ici)
 		}
 	}
+}
+
+func listRoomsHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, "Méthode HTTP non autorisée", http.StatusMethodNotAllowed)
+			return
+		}
+
+		rooms, err := getAllRooms(db)
+		if err != nil {
+			http.Error(w, "Erreur lors de la récupération des salles: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		data := struct {
+			Rooms []Room
+		}{
+			Rooms: rooms,
+		}
+
+		// Exécutez le template pour afficher les salles.
+		executeTemplate(w, "list_rooms.html", data)
+	}
+}
+
+// getAllRooms récupère toutes les salles de la base de données.
+func getAllRooms(db *sql.DB) ([]Room, error) {
+	var rooms []Room
+
+	query := `SELECT id, name, capacity FROM rooms`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var room Room
+		if err := rows.Scan(&room.ID, &room.Name, &room.Capacity); err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
 }
