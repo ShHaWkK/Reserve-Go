@@ -3,7 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Service de Réservation en Ligne</title>
-    <link rel="stylesheet" href="css/home.css">
+    <style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f7f7f7;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+    }
+
+
+    h1 {
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+
+    nav {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin: auto;
+        display: inline-block;
+    }
+
+    nav ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    nav ul li {
+        display: inline;
+        margin-right: 20px;
+    }
+
+    nav ul li a {
+        text-decoration: none;
+        color: #5c67f2;
+        font-weight: bold;
+        padding: 8px 16px;
+        border: 2px solid transparent;
+        transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    nav ul li a:hover, nav ul li a:focus {
+        background-color: #5c67f2;
+        color: white;
+        border-color: #5c67f2;
+        border-radius: 4px;
+    }
+
+    </style>
 </head>
 
 <body>
@@ -14,7 +66,6 @@
         <li><a href="/reservations/add">Ajouter une réservation</a></li>
         <li><a href="/room/add">Ajouter une nouvelle salle</a></li>
         <li><a href="/room/list">Lister toutes les salles</a></li>
-        <li><a href="/reservation/modify">Modifier les réservations</a></li>
         <li><a href="/reservations_by_room">Réservations par salle</a></li>
     </ul>
 </nav>
