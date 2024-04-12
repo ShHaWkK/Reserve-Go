@@ -86,7 +86,7 @@ func reservationHandler(db *sql.DB) http.HandlerFunc {
 			endTime := r.FormValue("endTime")
 
 			// Vérifie la disponibilité et crée la réservation
-			if isRoomAvailable(db, roomID, date, startTime, endTime) {
+			if isRoomAvailable(db, roomID, date, startTime, endTime, 0) {
 				err := insertReservation(db, roomID, date, startTime, endTime)
 				if err != nil {
 					http.Error(w, "Erreur lors de la création de la réservation", http.StatusInternalServerError)
@@ -106,19 +106,21 @@ func reservationHandler(db *sql.DB) http.HandlerFunc {
 
 //-------------------------- IsRoomAvailable --------------------------//
 
-func isRoomAvailable(db *sql.DB, roomID int, date, startTime, endTime string) bool {
+// isRoomAvailable checks if the room is available, excluding the specified reservation ID.
+func isRoomAvailable(db *sql.DB, roomID int, date, startTime, endTime string, excludeReservationID int) bool {
 	var count int
-	query := `SELECT COUNT(*) FROM reservations 
-              WHERE room_id = ? 
-              AND date = ? 
-              AND NOT (start_time >= ? OR end_time <= ?)`
+	// SQL query to count conflicting reservations, excluding the current one.
+	query := `SELECT COUNT(*) FROM reservations
+              WHERE room_id = ? AND date = ? AND NOT (end_time <= ? OR start_time >= ?)
+              AND id != ?` // Exclude the current reservation from the check.
 
-	err := db.QueryRow(query, roomID, date, endTime, startTime).Scan(&count)
+	// Executing the query with parameters.
+	err := db.QueryRow(query, roomID, date, startTime, endTime, excludeReservationID).Scan(&count)
 	if err != nil {
-		log.Printf("Erreur lors de la vérification de la disponibilité : %v", err)
+		log.Printf("Error checking room availability: %v", err)
 		return false
 	}
-	return count == 0
+	return count == 0 // No conflicting reservations means the room is available.
 }
 
 //-------------------------- IsRoomAvailable --------------------------//
@@ -137,12 +139,9 @@ func insertReservation(db *sql.DB, roomID int, date, startTime, endTime string) 
 
 func addReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-
+		if r.Method == "GET" {
 			executeTemplate(w, "add_reservation.html", nil)
-
-		case "POST":
+		} else if r.Method == "POST" {
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Error processing form", http.StatusBadRequest)
 				return
@@ -152,7 +151,8 @@ func addReservationHandler(db *sql.DB) http.HandlerFunc {
 			startTime := r.FormValue("startTime")
 			endTime := r.FormValue("endTime")
 
-			if isRoomAvailable(db, roomID, date, startTime, endTime) {
+			// Pass 0 as excludeReservationID when adding a new reservation
+			if isRoomAvailable(db, roomID, date, startTime, endTime, 0) {
 				if err := insertReservation(db, roomID, date, startTime, endTime); err != nil {
 					http.Error(w, "Error creating reservation", http.StatusInternalServerError)
 					return
@@ -161,8 +161,7 @@ func addReservationHandler(db *sql.DB) http.HandlerFunc {
 			} else {
 				http.Error(w, "Room is not available", http.StatusBadRequest)
 			}
-
-		default:
+		} else {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	}
@@ -275,7 +274,23 @@ func deleteReservationHandler(db *sql.DB) http.HandlerFunc {
 
 func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
+		// Extract the reservation ID from the query parameters for a GET request
+		if r.Method == "GET" {
+			reservationID := r.URL.Query().Get("id")
+			if reservationID == "" {
+				http.Error(w, "ID de réservation requis", http.StatusBadRequest)
+				return
+			}
+
+			reservation, err := getReservationByID(db, reservationID)
+			if err != nil {
+				log.Printf("Erreur lors de la récupération de la réservation : %v", err)
+				http.Error(w, "Erreur lors de la récupération de la réservation", http.StatusInternalServerError)
+				return
+			}
+			executeTemplate(w, "modify_reservation.html", reservation)
+		} else if r.Method == "POST" {
+			// Handle POST request to update a reservation
 			if err := r.ParseForm(); err != nil {
 				http.Error(w, "Erreur lors du traitement du formulaire", http.StatusBadRequest)
 				return
@@ -297,21 +312,31 @@ func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 			newStartTime := r.FormValue("newStartTime")
 			newEndTime := r.FormValue("newEndTime")
 
-			if isRoomAvailable(db, newRoomID, newDate, newStartTime, newEndTime) {
+			if isRoomAvailable(db, newRoomID, newDate, newStartTime, newEndTime, reservationID) {
 				query := `UPDATE reservations SET room_id = ?, date = ?, start_time = ?, end_time = ? WHERE id = ?`
-				_, err = db.Exec(query, newRoomID, newDate, newStartTime, newEndTime, reservationID)
-				if err != nil {
-					http.Error(w, "Erreur lors de la modification de la réservation", http.StatusInternalServerError)
+				if _, err := db.Exec(query, newRoomID, newDate, newStartTime, newEndTime, reservationID); err != nil {
+					log.Printf("Erreur lors de la modification de la réservation : %v", err)
+					http.Redirect(w, r, "/reservations?message=Erreur lors de la modification de la réservation", http.StatusSeeOther)
 					return
 				}
-				http.Redirect(w, r, "/reservations", http.StatusSeeOther)
+				http.Redirect(w, r, "/reservations?message=Modification réussie", http.StatusSeeOther)
 			} else {
-				http.Error(w, "La salle n'est pas disponible pour le créneau demandé", http.StatusBadRequest)
+				http.Redirect(w, r, "/reservations?message=Modification refusée - La salle n'est pas disponible pour le créneau demandé", http.StatusSeeOther)
 			}
-
 		} else {
+			http.Redirect(w, r, "Rien du tout", http.StatusSeeOther)
 		}
 	}
+}
+
+func getReservationByID(db *sql.DB, reservationID string) (Reservation, error) {
+	var reservation Reservation
+	query := `SELECT id, room_id, date, start_time, end_time FROM reservations WHERE id = ?`
+	err := db.QueryRow(query, reservationID).Scan(&reservation.ID, &reservation.RoomID, &reservation.Date, &reservation.StartTime, &reservation.EndTime)
+	if err != nil {
+		return reservation, err
+	}
+	return reservation, nil
 }
 
 //-------------------------- 	ListRoomHandler		--------------------------//
@@ -374,9 +399,19 @@ func reservationsByRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			roomID := r.URL.Query().Get("roomID")
+			if roomID == "" {
+				http.Error(w, "ID de salle manquant", http.StatusBadRequest)
+				return
+			}
 			reservations, err := getReservationsByRoom(db, roomID)
 			if err != nil {
+				log.Printf("Error fetching reservations for room %s: %v", roomID, err)
 				http.Error(w, "Erreur lors de la récupération des réservations", http.StatusInternalServerError)
+				return
+			}
+			if len(reservations) == 0 {
+				// Handle no reservations found case
+				executeTemplate(w, "reservations_by_room.html", nil) // Consider how you handle no results in your template
 				return
 			}
 			executeTemplate(w, "reservations_by_room.html", reservations)
