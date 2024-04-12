@@ -50,7 +50,9 @@ func main() {
 	http.HandleFunc("/room/list", listRoomsHandler(db))
 	http.HandleFunc("/reservations_by_room", reservationsByRoomHandler(db))
 
+	log.Println("---------------------------------------")
 	log.Println("Démarrage du serveur sur le port :8095")
+	log.Println("---------------------------------------")
 	log.Fatal(http.ListenAndServe(":8095", nil))
 }
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -166,6 +168,8 @@ func addReservationHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+//-------------------------- getAllReservations	 --------------------------//
+
 func getAllReservations(db *sql.DB) ([]Reservation, error) {
 	var reservations []Reservation
 	query := "SELECT id, room_id, date, start_time, end_time FROM reservations"
@@ -185,6 +189,8 @@ func getAllReservations(db *sql.DB) ([]Reservation, error) {
 	return reservations, nil
 }
 
+//-------------------------- 	executeTemplate		--------------------------//
+
 func executeTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + tmpl)
 	if err != nil {
@@ -193,6 +199,8 @@ func executeTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 	t.Execute(w, data)
 }
+
+//-------------------------- 	addRoomHandler		--------------------------//
 
 func addRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -231,7 +239,6 @@ func addRoomHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 
-			// Proceed to insert the room if it does not exist
 			insertQuery := "INSERT INTO rooms (name, capacity) VALUES (?, ?)"
 			_, err = db.Exec(insertQuery, name, capacity)
 			if err != nil {
@@ -247,6 +254,8 @@ func addRoomHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+//-------------------------- 	deleteReservationHandler		--------------------------//
+
 func deleteReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -261,6 +270,9 @@ func deleteReservationHandler(db *sql.DB) http.HandlerFunc {
 		}
 	}
 }
+
+//-------------------------- 	ModifyReservationHandler		--------------------------//
+
 func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -302,6 +314,8 @@ func modifyReservationHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+//-------------------------- 	ListRoomHandler		--------------------------//
+
 func listRoomsHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -325,6 +339,8 @@ func listRoomsHandler(db *sql.DB) http.HandlerFunc {
 		executeTemplate(w, "list_rooms.html", data)
 	}
 }
+
+//-------------------------- 	getAllRooms		--------------------------//
 
 // getAllRooms récupère toutes les salles de la base de données.
 func getAllRooms(db *sql.DB) ([]Room, error) {
@@ -352,6 +368,8 @@ func getAllRooms(db *sql.DB) ([]Room, error) {
 	return rooms, nil
 }
 
+//-------------------------- 	reservationsByRoomHandler		--------------------------//
+
 func reservationsByRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
@@ -367,6 +385,8 @@ func reservationsByRoomHandler(db *sql.DB) http.HandlerFunc {
 		}
 	}
 }
+
+//-------------------------- 	geteReservationsByRoom		--------------------------//
 
 // Fonction pour récupérer les réservations par salle depuis la base de données
 func getReservationsByRoom(db *sql.DB, roomID string) ([]Reservation, error) {
