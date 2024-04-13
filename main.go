@@ -123,7 +123,7 @@ func isRoomAvailable(db *sql.DB, roomID int, date, startTime, endTime string, ex
 		log.Printf("Error checking room availability: %v", err)
 		return false
 	}
-	return count == 0 // No conflicting reservations means the room is available.
+	return count == 0
 }
 
 //-------------------------- IsRoomAvailable --------------------------//
@@ -207,49 +207,45 @@ func executeTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 func addRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			executeTemplate(w, "add_room.html", nil)
+			errorMessage := r.URL.Query().Get("error")
+			executeTemplate(w, "add_room.html", map[string]string{"Error": errorMessage})
 			return
 		} else if r.Method == "POST" {
 			if err := r.ParseForm(); err != nil {
-				http.Error(w, "Erreur lors du traitement du formulaire", http.StatusBadRequest)
+				http.Redirect(w, r, "/room/add?error=Erreur lors du traitement du formulaire", http.StatusSeeOther)
 				return
 			}
 			name := r.FormValue("name")
 			capacityStr := r.FormValue("capacity")
 			if name == "" || capacityStr == "" {
-				http.Error(w, "Le nom et la capacité de la salle sont requis.", http.StatusBadRequest)
+				http.Redirect(w, r, "/room/add?error=Le nom et la capacité de la salle sont requis.", http.StatusSeeOther)
 				return
 			}
 			capacity, err := strconv.Atoi(capacityStr)
 			if err != nil {
-				http.Error(w, "Capacité invalide", http.StatusBadRequest)
+				http.Redirect(w, r, "/room/add?error=Capacité invalide", http.StatusSeeOther)
 				return
 			}
 
-			// Check if the room already exists
 			var existingRoomId int
 			checkQuery := "SELECT id FROM rooms WHERE name = ? LIMIT 1"
 			err = db.QueryRow(checkQuery, name).Scan(&existingRoomId)
-
 			if err != nil && err != sql.ErrNoRows {
-				http.Error(w, "Erreur lors de la vérification de l'existence de la salle", http.StatusInternalServerError)
+				http.Redirect(w, r, "/room/add?error=Erreur lors de la vérification de l'existence de la salle", http.StatusSeeOther)
 				return
 			}
-
 			if existingRoomId > 0 {
-				http.Error(w, "Une salle avec le même nom existe déjà", http.StatusBadRequest)
+				http.Redirect(w, r, "/room/add?error=Une salle avec le même nom existe déjà", http.StatusSeeOther)
 				return
 			}
 
 			insertQuery := "INSERT INTO rooms (name, capacity) VALUES (?, ?)"
 			_, err = db.Exec(insertQuery, name, capacity)
 			if err != nil {
-				http.Error(w, "Erreur lors de l'ajout de la salle", http.StatusInternalServerError)
+				http.Redirect(w, r, "/room/add?error=Erreur lors de l'ajout de la salle", http.StatusSeeOther)
 				return
 			}
-
 			http.Redirect(w, r, "/room/list", http.StatusSeeOther)
-			return
 		} else {
 			http.Error(w, "Méthode HTTP non autorisée", http.StatusMethodNotAllowed)
 		}

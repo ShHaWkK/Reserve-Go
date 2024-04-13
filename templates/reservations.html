@@ -47,6 +47,7 @@
        a {
            color: #007bff;
            text-decoration: none;
+
        }
 
        a:hover {
@@ -67,7 +68,8 @@
 {{else}}
 <p>Aucune réservation trouvée.</p>
 {{end}}
-<a href="/">Retour à l'accueil</a>
+<button><a href="/" > Retour à L'accueil</a></button>
+
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
@@ -77,7 +79,7 @@
             const messageDiv = document.createElement('div');
             messageDiv.textContent = message;
             messageDiv.style.color = message.startsWith('Erreur') ? 'red' : 'green';
-            messageDiv.style.position = 'absolute';
+            messageDiv.style.position = 'fixed';
             messageDiv.style.top = '20px';
             messageDiv.style.left = '50%';
             messageDiv.style.transform = 'translateX(-50%)';
@@ -93,19 +95,19 @@
             }, 4000);
         }
     });
+
     function confirmDeletion(event, reservationId) {
-        var confirmResponse = confirm('Êtes-vous sûr de vouloir supprimer cette réservation?');
-        if (!confirmResponse) {
-s            event.preventDefault();
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation?')) {
+            event.preventDefault();
         } else {
+            // If confirmed, submit the form automatically via POST request
             var form = document.createElement('form');
             form.method = 'post';
             form.action = '/room/delete?id=' + reservationId;
-
             document.body.appendChild(form);
-
             form.submit();
         }
     }
 </script>
+
 </html>
