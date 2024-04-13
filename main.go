@@ -54,6 +54,9 @@ func main() {
 	log.Println("Démarrage du serveur sur le port :8095")
 	log.Println("---------------------------------------")
 	log.Fatal(http.ListenAndServe(":8095", nil))
+
+	// Lancer l'interface CLI
+
 }
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	executeTemplate(w, "home.html", nil)
