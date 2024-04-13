@@ -17,10 +17,10 @@ services:
     depends_on:
       - database
   database:
-    image: mysql:8.0.33
+    image: mysql:latest
     volumes:
       - db_data:/var/lib/mysql
-      - ./BDD.sql:/docker-entrypoint-initdb.d/BDD.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
     environment:

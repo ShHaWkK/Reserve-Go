@@ -400,27 +400,38 @@ func getAllRooms(db *sql.DB) ([]Room, error) {
 
 func reservationsByRoomHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			roomID := r.URL.Query().Get("roomID")
-			if roomID == "" {
-				http.Error(w, "ID de salle manquant", http.StatusBadRequest)
-				return
-			}
-			reservations, err := getReservationsByRoom(db, roomID)
+		if r.Method != "GET" {
+			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+			return
+		}
+
+		roomID := r.URL.Query().Get("roomID")
+		var reservations []Reservation
+		var errorMessage string
+
+		if roomID != "" {
+			var err error
+			reservations, err = getReservationsByRoom(db, roomID)
 			if err != nil {
 				log.Printf("Error fetching reservations for room %s: %v", roomID, err)
-				http.Error(w, "Erreur lors de la récupération des réservations", http.StatusInternalServerError)
-				return
+				errorMessage = "Erreur lors de la récupération des réservations"
+			} else if len(reservations) == 0 {
+				errorMessage = "Aucune réservation trouvée pour cette salle."
 			}
-			if len(reservations) == 0 {
-				// Handle no reservations found case
-				executeTemplate(w, "reservations_by_room.html", nil) // Consider how you handle no results in your template
-				return
-			}
-			executeTemplate(w, "reservations_by_room.html", reservations)
 		} else {
-			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+			errorMessage = "ID de salle manquant."
 		}
+
+		// Prepare data for rendering
+		data := struct {
+			Reservations []Reservation
+			Error        string
+		}{
+			Reservations: reservations,
+			Error:        errorMessage,
+		}
+
+		executeTemplate(w, "reservations_by_room.html", data)
 	}
 }
 

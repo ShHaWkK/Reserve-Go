@@ -67,7 +67,11 @@
     <input type="submit" value="Afficher Réservations">
 </form>
 
-{{if .}}
+{{if .Error}}
+<p style="color: red;">{{.Error}}</p>
+{{end}}
+
+{{if .Reservations}}
 <table>
     <tr>
         <th>ID</th>
@@ -76,7 +80,7 @@
         <th>Start Time</th>
         <th>End Time</th>
     </tr>
-    {{range .}}
+    {{range .Reservations}}
     <tr>
         <td>{{.ID}}</td>
         <td>{{.RoomID}}</td>
@@ -90,4 +94,3 @@
 <p>Aucune réservation trouvée pour cette salle.</p>
 {{end}}
 </body>
-</html>
