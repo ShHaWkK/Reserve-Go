@@ -42,6 +42,10 @@ func main() {
 	}
 	defer db.Close()
 
+	staticDir := http.Dir("templates/css")
+	staticHandler := http.FileServer(staticDir)
+	http.Handle("/static/", http.StripPrefix("/static/", staticHandler))
+
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/reservations", reservationHandler(db))
 	http.HandleFunc("/room/add", addRoomHandler(db))
