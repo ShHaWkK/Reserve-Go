@@ -51,6 +51,7 @@ func main() {
 	http.HandleFunc("/room/list", listRoomsHandler(db))
 	http.HandleFunc("/reservations_by_room", reservationsByRoomHandler(db))
 	http.HandleFunc("/reservations_by_date", getReservationsByDateHandler(db))
+
 	http.HandleFunc("/check_availability", checkAvailabilityHandler(db))
 	log.Println("---------------------------------------")
 	log.Println("Démarrage du serveur sur le port :8095")
@@ -476,25 +477,28 @@ func getReservationsByDate(db *sql.DB, date string) ([]Reservation, error) {
 }
 
 func getReservationsByDateHandler(db *sql.DB) http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("ça me soule :", r.URL.Query().Get("date"))
-		if r.Method != "GET" {
-			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		// Si la méthode est GET et qu'il n'y a pas de paramètre "date", affichez simplement le formulaire.
+		if r.Method == "GET" && r.FormValue("date") == "" {
+			executeTemplate(w, "reservation_by_date.html", nil)
 			return
 		}
-		date := r.URL.Query().Get("date")
+
+		// Si une date est fournie, procédez à la récupération des réservations pour cette date.
+		date := r.FormValue("date")
 		if date == "" {
-			http.Error(w, "Date important ", http.StatusBadRequest)
+			// Ici, vous pourriez vouloir renvoyer l'utilisateur au formulaire avec un message d'erreur.
+			executeTemplate(w, "reservation_by_date.html", map[string]string{"Error": "Date importante"})
 			return
 		}
+
 		reservations, err := getReservationsByDate(db, date)
 		if err != nil {
-			log.Printf("Error fetching  %s: %v", date, err)
-			http.Error(w, "Internal ", http.StatusInternalServerError)
+			log.Printf("Erreur lors de la récupération des réservations pour la date %s: %v", date, err)
+			http.Error(w, "Erreur interne du serveur", http.StatusInternalServerError)
 			return
 		}
-		// Assuming you have a template to render reservations
+
 		executeTemplate(w, "reservation_by_date.html", reservations)
 	}
 }
