@@ -478,28 +478,32 @@ func getReservationsByDate(db *sql.DB, date string) ([]Reservation, error) {
 
 func getReservationsByDateHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Si la méthode est GET et qu'il n'y a pas de paramètre "date", affichez simplement le formulaire.
-		if r.Method == "GET" && r.FormValue("date") == "" {
-			executeTemplate(w, "reservation_by_date.html", nil)
-			return
-		}
+		// Si la méthode est GET et qu'il y a un paramètre "date", procédez à la récupération des réservations.
+		if r.Method == "GET" {
+			date := r.URL.Query().Get("date")
+			if date == "" {
+				// Aucune date spécifiée, affichez simplement le formulaire.
+				executeTemplate(w, "reservation_by_date.html", nil)
+				return
+			}
 
-		// Si une date est fournie, procédez à la récupération des réservations pour cette date.
-		date := r.FormValue("date")
-		if date == "" {
-			// Ici, vous pourriez vouloir renvoyer l'utilisateur au formulaire avec un message d'erreur.
-			executeTemplate(w, "reservation_by_date.html", map[string]string{"Error": "Date importante"})
-			return
-		}
+			// Une date a été spécifiée, essayez de récupérer les réservations.
+			reservations, err := getReservationsByDate(db, date)
+			if err != nil {
+				log.Printf("Erreur lors de la récupération des réservations pour la date %s: %v", date, err)
+				http.Error(w, "Erreur interne du serveur", http.StatusInternalServerError)
+				return
+			}
 
-		reservations, err := getReservationsByDate(db, date)
-		if err != nil {
-			log.Printf("Erreur lors de la récupération des réservations pour la date %s: %v", date, err)
-			http.Error(w, "Erreur interne du serveur", http.StatusInternalServerError)
-			return
+			// Si des réservations sont trouvées, passez-les au template pour affichage.
+			executeTemplate(w, "reservation_by_date.html", map[string]interface{}{
+				"Date":         date,
+				"Reservations": reservations,
+			})
+		} else {
+			// Méthode non autorisée.
+			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
 		}
-
-		executeTemplate(w, "reservation_by_date.html", reservations)
 	}
 }
 

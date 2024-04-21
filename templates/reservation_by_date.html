@@ -6,10 +6,25 @@
 </head>
 <body>
 <h1>Retrieve Reservations by Date</h1>
-<form method="GET" action="/reservations/by_date">
+{{ if .Error }}
+<p>Error: {{ .Error }}</p>
+{{ else }}
+<form method="GET" action="/reservations_by_date">
     <label for="date">Select Date:</label>
     <input type="date" id="date" name="date" required>
     <input type="submit" value="Get Reservations">
 </form>
+
+{{ if .Reservations }}
+<h2>Réservations pour la date : {{ .Date }}</h2>
+<ul>
+    {{ range .Reservations }}
+    <li>ID: {{ .ID }}, Room ID: {{ .RoomID }}, Start Time: {{ .StartTime }}, End Time: {{ .EndTime }}</li>
+    {{ end }}
+</ul>
+{{ else }}
+<p>Aucune réservation trouvée pour cette date.</p>
+{{ end }}
+{{ end }}
 </body>
 </html>
