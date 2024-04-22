@@ -1,50 +1,52 @@
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f7f7f7;
-    color: #333;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f5f7fa; /* A light blueish grey background for a softer look */
+    color: #4A4A4A;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     text-align: center;
 }
 
-
 h1 {
-    color: #333;
-    margin-bottom: 20px;
+    color: #2C3E50;
+    margin-bottom: 30px;
+    font-size: 2.5em; /* Making the header a bit larger */
 }
 
-
 nav {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #ECF0F1;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    margin: auto;
-    display: inline-block;
+    margin: 30px auto;
+    display: block;
+    max-width: 700px;
 }
 
 nav ul {
     list-style-type: none;
     padding: 0;
+    margin: 0;
 }
 
 nav ul li {
-    display: inline;
-    margin-right: 20px;
+    display: inline-block;
+    margin: 0 20px;
 }
 
 nav ul li a {
     text-decoration: none;
-    color: #5c67f2;
-    font-weight: bold;
-    padding: 8px 16px;
-    border: 2px solid transparent;
-    transition: background-color 0.3s, border-color 0.3s;
+    color: #3498DB;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: 2px solid #3498DB;
+    transition: background-color 0.3s, color 0.3s;
+    border-radius: 5px;
+    font-size: 1em; /* Ensuring the font size is responsive */
 }
 
 nav ul li a:hover, nav ul li a:focus {
-    background-color: #5c67f2;
+    background-color: #3498DB;
     color: white;
-    border-color: #5c67f2;
-    border-radius: 4px;
+    border-color: #2980B9;
 }
