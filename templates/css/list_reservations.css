@@ -1,0 +1,76 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+h1 {
+    color: #5a5a5a;
+    text-align: center;
+}
+
+.reservation {
+    background-color: #ffffff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.reservation p {
+    margin: 0;
+    color: #555;
+}
+
+.reservation a {
+    color: #5c67f2;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+.reservation form {
+    display: inline;
+}
+
+ul li {
+    list-style: none;
+}
+
+button {
+    background-color: #5c67f2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #4a54e1;
+}
+
+a button {
+    background: none;
+    color: #5c67f2;
+    padding: 0;
+}
+
+a button:hover {
+    color: #4a54e1;
+    background: none;
+}
+
+p {
+    color: #ff0000;
+}
+
+.reservation div{
+    margin-left: 40px;
+}

@@ -3,22 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>Liste des Réservations</title>
-    <link rel="stylesheet" href="/static/list_reservation.css"/>
+    <link rel="stylesheet" href="/static/list_reservations.css"/>
 </head>
+<header>
+    <button type="button" onclick="history.back()">Retour</button>
+</header>
 <body>
 <h1>Liste des Réservations</h1>
 {{range .}}
 <div class="reservation">
-    <p>ID Réservation: {{.ID}}, Salle: {{.RoomID}}, Date: {{.Date}}, Heure de début: {{.StartTime}}, Heure de fin: {{.EndTime}}</p>
-    <a href="/room/modify?id={{.ID}}">Modifier</a>
-    <form action="/room/delete?id={{.ID}}" method="post" style="display:inline;">
-        <button onclick="confirmDeletion(event, '{{.ID}}')">Supprimer</button>
-    </form>
+    <ul>
+        <li>ID Réservation: {{.ID}}</li>
+        <li>Salle: {{.RoomID}}</li>
+        <li>Date: {{.Date}}</li>
+        <li>Heure de début: {{.StartTime}}</li>
+        <li>Heure de fin: {{.EndTime}}</li>
+    </ul>
+    <div>
+        <a href="/room/modify?id={{.ID}}">Modifier</a>
+        <form action="/room/delete?id={{.ID}}" method="post" style="display:inline;">
+            <button onclick="confirmDeletion(event, '{{.ID}}')">Supprimer</button>
+        </form>
+    </div>
+
 </div>
 {{else}}
 <p>Aucune réservation trouvée.</p>
 {{end}}
-<button><a href="/" > Retour à L'accueil</a></button>
+
 
 </body>
 <script>
