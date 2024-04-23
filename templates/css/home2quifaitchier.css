@@ -10,7 +10,7 @@ body {
 h1 {
     color: #2C3E50;
     margin-bottom: 30px;
-    font-size: 2.5em; /* Making the header a bit larger */
+    font-size: 2.5em;
 }
 
 nav {
@@ -20,21 +20,27 @@ nav {
     padding: 20px;
     margin: 30px auto;
     display: block;
-    max-width: 700px;
+    max-width: 90vw;
+
 }
 
 nav ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
 }
 
 nav ul li {
-    display: inline-block;
     margin: 0 20px;
+    display: block;
 }
 
 nav ul li a {
+    display: block;
     text-decoration: none;
     color: #3498DB;
     font-weight: 500;
@@ -42,7 +48,7 @@ nav ul li a {
     border: 2px solid #3498DB;
     transition: background-color 0.3s, color 0.3s;
     border-radius: 5px;
-    font-size: 1em; /* Ensuring the font size is responsive */
+    font-size: 1em;
 }
 
 nav ul li a:hover, nav ul li a:focus {
