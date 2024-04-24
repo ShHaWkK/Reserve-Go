@@ -537,7 +537,7 @@ func getReservationsByDateHandler(db *sql.DB) http.HandlerFunc {
 func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
-			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -546,25 +546,29 @@ func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 		startTime := r.URL.Query().Get("startTime")
 		endTime := r.URL.Query().Get("endTime")
 
+		var data struct {
+			IsAvailable bool
+			Error       string
+		}
+
+		// Check if all parameters are provided
 		if roomIDStr == "" || date == "" || startTime == "" || endTime == "" {
-			executeTemplate(w, "availability.html", map[string]interface{}{
-				"Error": "All parameters are required",
-			})
+			data.Error = "All parameters are required"
+			executeTemplate(w, "availability.html", data)
 			return
 		}
 
+		// Attempt to convert roomID to integer
 		roomID, err := strconv.Atoi(roomIDStr)
 		if err != nil {
-			executeTemplate(w, "availability.html", map[string]interface{}{
-				"Error": "Invalid room ID",
-			})
+			data.Error = "Invalid room ID"
+			executeTemplate(w, "availability.html", data)
 			return
 		}
 
-		available := isRoomAvailable(db, roomID, date, startTime, endTime, 0)
-		executeTemplate(w, "availability.html", map[string]interface{}{
-			"IsAvailable": available,
-		})
+		// Check room availability and set the data
+		data.IsAvailable = isRoomAvailable(db, roomID, date, startTime, endTime, 0)
+		executeTemplate(w, "availability.html", data)
 	}
 }
 

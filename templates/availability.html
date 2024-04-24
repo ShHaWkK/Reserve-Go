@@ -1,13 +1,18 @@
+<!-- availability.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Check Room Availability</title>
-    <link rel="stylesheet" href="/static/style.css"/>
+    <title>Room Availability</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<h1>Check Room Availability</h1>
-<form id="availabilityForm">
+<header>
+
+</header>
+<h1>Room Availability Check</h1>
+
+<form action="/check_availability" method="get">
     <div>
         <label for="roomID">Room ID:</label>
         <input type="number" id="roomID" name="roomID" required>
@@ -25,39 +30,20 @@
         <input type="time" id="endTime" name="endTime" required>
     </div>
     <button type="submit">Check Availability</button>
-
 </form>
-<div id="availabilityResult"></div>
-{{ if .IsAvailable }}
-<p>The room is available!</p>
-{{ else }}
-<p>The room is not available.</p>
-{{ end }}
+<!-- The result from the server will be displayed here. -->
+<div id="availabilityResult">
+    {{ if .IsAvailable }}
+    <p class="available">The room is available!</p>
+    {{ else if .Error }}
+    <p class="error-message">Error: {{ .Error }}</p>
+    {{ else }}
+    <p class="not-available">The room is not available.</p>
+    {{ end }}
+</div>
 
-<script>
-    document.getElementById('availabilityForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const roomID = document.getElementById('roomID').value;
-        const date = document.getElementById('date').value;
-        const startTime = document.getElementById('startTime').value;
-        const endTime = document.getElementById('endTime').value;
-        const queryString = `roomID=${roomID}&date=${date}&startTime=${startTime}&endTime=${endTime}`;
-        fetch(`/check_availability?${queryString}`)
-            .then(response => response.json())
-            .then(data => {
-                const resultElement = document.getElementById('availabilityResult');
-                if(data.isAvailable) {
-                    resultElement.textContent = 'Room is available!';
-                    resultElement.style.color = 'green';
-                } else {
-                    resultElement.textContent = 'Room is not available.';
-                    resultElement.style.color = 'red';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    });
-</script>
 </body>
 </html>
+
+
+
