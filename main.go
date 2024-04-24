@@ -321,9 +321,9 @@ func listRooms(db *sql.DB) {
 }
 
 func createReservation(db *sql.DB, scanner *bufio.Scanner) {
-	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 15)))
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 25)))
 	fmt.Println("Création d'une réservation...")
-	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 15)))
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 25)))
 
 	fmt.Println("Entrez l'ID de la salle :")
 	scanner.Scan()
@@ -345,7 +345,7 @@ func createReservation(db *sql.DB, scanner *bufio.Scanner) {
 		insertReservation(db, roomID, date, startTime, endTime)
 		fmt.Println("Réservation créée avec succès.")
 	} else {
-		fmt.Println("La salle n'est pas disponible pour le créneau demandé.")
+		colorLog(ColorRed, "La salle n'est pas disponible pour le créneau demandé.")
 	}
 	navigationOptions(db, scanner)
 }
@@ -462,7 +462,7 @@ func insertReservation(db *sql.DB, roomID, date, startTime, endTime string) {
 	if err != nil {
 		log.Printf("Erreur lors de la création de la réservation : %v", err)
 	} else {
-		fmt.Println("Réservation créée avec succès.")
+		//fmt.Println("Réservation créée avec succès.")
 	}
 
 }
