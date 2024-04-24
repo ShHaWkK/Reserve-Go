@@ -26,6 +26,8 @@ th, td {
 th {
     background-color: #5c67f2;
     color: white;
+    padding-top: 12px;
+    padding-bottom: 12px;
 }
 
 tr:nth-child(even) {
@@ -36,7 +38,25 @@ tr:hover {
     background-color: #ddd;
 }
 
-th {
-    padding-top: 12px;
-    padding-bottom: 12px;
+header {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #5c67f2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #4a54e1;
 }

@@ -4,8 +4,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -42,6 +44,14 @@ func main() {
 	}
 	defer db.Close()
 
+	err = exportReservationsToJSON(db, "reservations.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Reservations were successfully exported to JSON file.")
+
+	//---------- CSS ----------//
 	staticDir := http.Dir("templates/css")
 	staticHandler := http.FileServer(staticDir)
 	http.Handle("/static/", http.StripPrefix("/static/", staticHandler))
@@ -524,19 +534,46 @@ func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 		endTime := r.URL.Query().Get("endTime")
 
 		if roomIDStr == "" || date == "" || startTime == "" || endTime == "" {
-			http.Error(w, "All parameters are required", http.StatusBadRequest)
+			executeTemplate(w, "availability.html", map[string]interface{}{
+				"Error": "All parameters are required",
+			})
 			return
 		}
 
 		roomID, err := strconv.Atoi(roomIDStr)
 		if err != nil {
-			http.Error(w, "Invalid room ID", http.StatusBadRequest)
+			executeTemplate(w, "availability.html", map[string]interface{}{
+				"Error": "Invalid room ID",
+			})
 			return
 		}
 
 		available := isRoomAvailable(db, roomID, date, startTime, endTime, 0)
-		response := map[string]bool{"isAvailable": available}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		executeTemplate(w, "availability.html", map[string]interface{}{
+			"IsAvailable": available,
+		})
 	}
 }
+
+//------------------------------	Export JSON		------------------------------------//
+
+func exportReservationsToJSON(db *sql.DB, filename string) error {
+	reservations, err := getAllReservations(db)
+	if err != nil {
+		return fmt.Errorf("error fetching reservations: %v", err)
+	}
+
+	jsonData, err := json.MarshalIndent(reservations, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling reservations: %v", err)
+	}
+
+	if err = ioutil.WriteFile(filename, jsonData, 0644); err != nil {
+		return fmt.Errorf("error writing JSON to file: %v", err)
+	}
+
+	log.Printf("Reservations exported to %s successfully.\n", filename)
+	return nil
+}
+
+//------------------------------ 	Export CSV		------------------------------------//
