@@ -3,6 +3,7 @@ package main
 //-------------------------- IMPORT --------------------------//
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -10,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -44,12 +46,25 @@ func main() {
 	}
 	defer db.Close()
 
-	err = exportReservationsToJSON(db, "reservations.json")
+	// Fetch reservations
+	reservations, err := getAllReservations(db)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error fetching reservations: %v", err)
 	}
 
-	log.Println("Reservations were successfully exported to JSON file.")
+	// Export to JSON
+	jsonFilename := "reservations.json"
+	if err = exportReservationsToJSON(reservations, jsonFilename); err != nil {
+		log.Fatalf("Error exporting to JSON: %v", err)
+	}
+
+	// Export to CSV
+	csvFilename := "reservations.csv"
+	if err = exportReservationsToCSV(reservations, csvFilename); err != nil {
+		log.Fatalf("Could not write to CSV file: %v", err)
+	}
+
+	log.Println("Reservations were successfully exported to both JSON and CSV files.")
 
 	//---------- CSS ----------//
 	staticDir := http.Dir("templates/css")
@@ -496,12 +511,11 @@ func getReservationsByDateHandler(db *sql.DB) http.HandlerFunc {
 		if r.Method == "GET" {
 			date := r.URL.Query().Get("date")
 			if date == "" {
-				// Aucune date spécifiée, affichez simplement le formulaire.
 				executeTemplate(w, "reservation_by_date.html", nil)
 				return
 			}
 
-			// Une date a été spécifiée, essayez de récupérer les réservations.
+			// récupérer les réservations.
 			reservations, err := getReservationsByDate(db, date)
 			if err != nil {
 				log.Printf("Erreur lors de la récupération des réservations pour la date %s: %v", date, err)
@@ -509,13 +523,12 @@ func getReservationsByDateHandler(db *sql.DB) http.HandlerFunc {
 				return
 			}
 
-			// Si des réservations sont trouvées, passez-les au template pour affichage.
+			// Si des réservations sont trouvées, passe  au template pour affichage.
 			executeTemplate(w, "reservation_by_date.html", map[string]interface{}{
 				"Date":         date,
 				"Reservations": reservations,
 			})
 		} else {
-			// Méthode non autorisée.
 			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
 		}
 	}
@@ -557,12 +570,7 @@ func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 
 //------------------------------	Export JSON		------------------------------------//
 
-func exportReservationsToJSON(db *sql.DB, filename string) error {
-	reservations, err := getAllReservations(db)
-	if err != nil {
-		return fmt.Errorf("error fetching reservations: %v", err)
-	}
-
+func exportReservationsToJSON(reservations []Reservation, filename string) error {
 	jsonData, err := json.MarshalIndent(reservations, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling reservations: %v", err)
@@ -576,4 +584,36 @@ func exportReservationsToJSON(db *sql.DB, filename string) error {
 	return nil
 }
 
-//------------------------------ 	Export CSV		------------------------------------//
+// ------------------------------ 	Export CSV		------------------------------------//
+
+func exportReservationsToCSV(reservations []Reservation, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	header := []string{"ID", "RoomID", "Date", "StartTime", "EndTime"}
+	if err := writer.Write(header); err != nil {
+		return err
+	}
+
+	for _, reservation := range reservations {
+		record := []string{
+			fmt.Sprint(reservation.ID),
+			fmt.Sprint(reservation.RoomID),
+			reservation.Date,
+			reservation.StartTime,
+			reservation.EndTime,
+		}
+		if err := writer.Write(record); err != nil {
+			return err
+		}
+	}
+
+	log.Printf("Reservations exported to %s successfully.\n", filename)
+	return nil
+}
