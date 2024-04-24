@@ -80,3 +80,21 @@ a:hover {
     color: #333;
     text-decoration: underline;
 }
+
+.back-home-link {
+    display: inline-block;
+    background-color: #3498db; /* Blue */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-align: center;
+    text-decoration: none;
+    margin-top: 20px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.back-home-link:hover {
+    background-color: #2980b9; /* Darker blue */
+    text-decoration: none; /* Ensures no underline on hover */
+}
