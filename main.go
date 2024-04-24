@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -80,6 +81,14 @@ func main() {
 		case "9":
 			showHelp()
 		case "10":
+			if err := exportReservationsAsCSV(db, "reservations.csv"); err != nil {
+				log.Printf("Failed to export reservations as CSV: %v", err)
+			}
+		case "11":
+			if err := exportReservationsAsJSON(db, "reservations.json"); err != nil {
+				log.Printf("Failed to export reservations as JSON: %v", err)
+			}
+		case "12":
 			fmt.Println("Merci d'avoir utilisé le service. À bientôt !")
 			return
 		default:
@@ -134,7 +143,9 @@ func showMenu() {
 	fmt.Println("7. Récupérer les réservations par salle")
 	fmt.Println("8. Récupérer les réservations par date")
 	fmt.Println("9. Aide")
-	fmt.Println("10. Quitter")
+	fmt.Println("10. Exportation CSV ")
+	fmt.Println("11. Exportation JSON ")
+	fmt.Println("12. Quitter")
 	fmt.Print("\nChoisissez une option : ")
 }
 
@@ -163,7 +174,7 @@ func clearScreen() {
 }
 
 /*
-*	Navigation
+*Navigation
  */
 func navigationOptions(db *sql.DB, scanner *bufio.Scanner) {
 	for {
@@ -310,8 +321,9 @@ func listRooms(db *sql.DB) {
 }
 
 func createReservation(db *sql.DB, scanner *bufio.Scanner) {
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 15)))
 	fmt.Println("Création d'une réservation...")
-	fmt.Println("----------------------------------")
+	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 15)))
 
 	fmt.Println("Entrez l'ID de la salle :")
 	scanner.Scan()
@@ -576,6 +588,9 @@ func exportReservationsAsJSON(db *sql.DB, filename string) error {
 	return ioutil.WriteFile(filename, data, 0644)
 }
 
+/*
+*
+ */
 func getAllReservations(db *sql.DB) ([]Reservation, error) {
 	var reservations []Reservation
 	query := "SELECT id, room_id, date, start_time, end_time FROM reservations"
@@ -593,4 +608,48 @@ func getAllReservations(db *sql.DB) ([]Reservation, error) {
 		reservations = append(reservations, r)
 	}
 	return reservations, nil
+}
+
+/*
+* Exportation CSV
+ */
+func exportReservationsAsCSV(db *sql.DB, filename string) error {
+	reservations, err := getAllReservations(db)
+	if err != nil {
+		log.Printf("Error fetching reservations: %v", err)
+		return err
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		log.Printf("Error creating CSV file: %v", err)
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	header := []string{"ID", "RoomID", "Date", "StartTime", "EndTime"}
+	if err := writer.Write(header); err != nil {
+		log.Printf("Error writing header to CSV: %v", err)
+		return err
+	}
+
+	for _, reservation := range reservations {
+		record := []string{
+			strconv.Itoa(reservation.ID),
+			strconv.Itoa(reservation.RoomID),
+			reservation.Date,
+			reservation.StartTime,
+			reservation.EndTime,
+		}
+		if err := writer.Write(record); err != nil {
+			log.Printf("Error writing record to CSV: %v", err)
+			return err
+		}
+	}
+
+	log.Printf("Reservations successfully exported to %s", filename)
+	return nil
 }
