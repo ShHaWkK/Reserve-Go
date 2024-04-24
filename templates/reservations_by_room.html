@@ -3,62 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Réservations par Salle</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-        form {
-            background-color: white;
-            margin: 20px auto;
-            padding: 20px;
-            width: 300px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        label {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        input[type="number"],
-        input[type="submit"] {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        input[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="/static/reservation_room.css">
 </head>
+<header>
+    <button type="button" onclick="history.back()">Retour</button>
+</header>
 <body>
 <h1>Réservations par Salle</h1>
 <form method="GET" action="/reservations_by_room">
