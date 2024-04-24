@@ -550,15 +550,12 @@ func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 			IsAvailable bool
 			Error       string
 		}
-
-		// Check if all parameters are provided
 		if roomIDStr == "" || date == "" || startTime == "" || endTime == "" {
 			data.Error = "All parameters are required"
 			executeTemplate(w, "availability.html", data)
 			return
 		}
 
-		// Attempt to convert roomID to integer
 		roomID, err := strconv.Atoi(roomIDStr)
 		if err != nil {
 			data.Error = "Invalid room ID"
@@ -566,7 +563,6 @@ func checkAvailabilityHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Check room availability and set the data
 		data.IsAvailable = isRoomAvailable(db, roomID, date, startTime, endTime, 0)
 		executeTemplate(w, "availability.html", data)
 	}
