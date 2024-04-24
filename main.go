@@ -58,10 +58,8 @@ func main() {
 
 	for {
 		showMenu()
-
 		scanner.Scan()
 		choice := scanner.Text()
-
 		switch choice {
 		case "1":
 			listRooms(db)
@@ -108,7 +106,6 @@ func connectToDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("error opening database connection: %v", err)
 	}
 
-	// Attendre que la base de données soit prête
 	for i := 0; i < 10; i++ {
 		err = db.Ping()
 		if err == nil {
@@ -124,7 +121,7 @@ func connectToDB() (*sql.DB, error) {
 
 // ----------------------- Affichage de Menu -----------------------//
 func showMenu() {
-	clearScreen()
+	//clearScreen()
 	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 50)))
 	fmt.Println(colorString(ColorGreen, "Bienvenue dans le Service de Réservation en Ligne"))
 	fmt.Println(colorString(ColorBlue, strings.Repeat("-", 50)))
@@ -141,6 +138,7 @@ func showMenu() {
 	fmt.Print("\nChoisissez une option : ")
 }
 
+// ------------------------------	Menu Aide 	------------------------------//
 func showHelp() {
 	clearScreen()
 	fmt.Println(colorString(ColorGreen, "Aide :"))
@@ -178,10 +176,10 @@ func navigationOptions(db *sql.DB, scanner *bufio.Scanner) {
 
 		switch choice {
 		case "1":
-			return // Retour au menu principal
+			return
 		case "2":
 			fmt.Println("Merci d'avoir utilisé le service. À bientôt !")
-			os.Exit(0) // Quitter le programme
+			os.Exit(0)
 		default:
 			fmt.Println("Option non valide. Veuillez choisir une option entre 1 et 2.")
 		}
