@@ -50,7 +50,7 @@ En cliquant sur les boutons, l'utilisateur est amené à saisir dans des champs 
 ## Documentation technique
 
 ### Prérequis
-- Installation des dépndances MySQL ``go get -u github.com/go-sql-driver/mysql``
+- Installation des dépendances MySQL ``go get -u github.com/go-sql-driver/mysql``
 ### Structure du programme et Fonctionnalités
 1. Définition des packages :
     - ``bufio``, ``csv``, ``json``.... : Manipulation des fichiers ainsi que des formats de données
