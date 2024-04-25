@@ -3,18 +3,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Room Availability</title>
+    <title>Vérification de la disponibilité des Salles</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <header>
     <button type="button" onclick="history.back()">Retour</button>
 </header>
-<h1>Room Availability Check</h1>
+<h1>Vérification de la disponibilité des Salles</h1>
 
 <form action="/check_availability" method="get">
     <div>
-        <label for="roomID">Room ID:</label>
+        <label for="roomID">Salle ID:</label>
         <input type="number" id="roomID" name="roomID" required>
     </div>
     <div>
@@ -22,16 +22,15 @@
         <input type="date" id="date" name="date" required>
     </div>
     <div>
-        <label for="startTime">Start Time:</label>
+        <label for="startTime">Heure de Début :</label>
         <input type="time" id="startTime" name="startTime" required>
     </div>
     <div>
-        <label for="endTime">End Time:</label>
+        <label for="endTime">Heure de Fin :</label>
         <input type="time" id="endTime" name="endTime" required>
     </div>
-    <button type="submit">Check Availability</button>
+    <button type="submit">Vérifier la disponibilité</button>
 </form>
-<!-- The result from the server will be displayed here. -->
 <div id="availabilityResult">
     {{ if .IsAvailable }}
     <p class="available">La Salle est disponible !</p>
