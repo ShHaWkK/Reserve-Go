@@ -15,9 +15,9 @@ import (
 )
 
 func CreateReservation(db *sql.DB, scanner *bufio.Scanner) {
-	fmt.Println(utils.ColorString(utils.ColorBlue, strings.Repeat("-", 15)))
+	fmt.Println(utils.ColorString(utils.ColorBlue, strings.Repeat("-", 35)))
 	fmt.Println("Création d'une réservation...")
-	fmt.Println(utils.ColorString(utils.ColorBlue, strings.Repeat("-", 15)))
+	fmt.Println(utils.ColorString(utils.ColorBlue, strings.Repeat("-", 35)))
 
 	fmt.Println("Entrez l'ID de la salle :")
 	scanner.Scan()
@@ -136,7 +136,7 @@ func InsertReservation(db *sql.DB, roomID, date, startTime, endTime string) {
 	if err != nil {
 		log.Printf("Erreur lors de la création de la réservation : %v", err)
 	} else {
-		fmt.Println("Réservation créée avec succès.")
+
 	}
 
 }
