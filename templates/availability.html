@@ -34,11 +34,11 @@
 <!-- The result from the server will be displayed here. -->
 <div id="availabilityResult">
     {{ if .IsAvailable }}
-    <p class="available">The room is available!</p>
+    <p class="available">La Salle est disponible !</p>
     {{ else if .Error }}
     <p class="error-message">Error: {{ .Error }}</p>
     {{ else }}
-    <p class="not-available">The room is not available.</p>
+    <p class="not-available">La Salle n'est pas Disponible .</p>
     {{ end }}
 </div>
 
