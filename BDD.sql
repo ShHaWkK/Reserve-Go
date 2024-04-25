@@ -3,19 +3,19 @@
 */
 
 CREATE TABLE rooms (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    capacity INT NOT NULL,
-    available BOOLEAN DEFAULT TRUE
+                       id INT AUTO_INCREMENT PRIMARY KEY,
+                       name VARCHAR(255) NOT NULL,
+                       capacity INT NOT NULL,
+                       available BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE reservations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    room_id INT,
-    date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    FOREIGN KEY (room_id) REFERENCES rooms(id)
+                              id INT AUTO_INCREMENT PRIMARY KEY,
+                              room_id INT,
+                              date DATE NOT NULL,
+                              start_time TIME NOT NULL,
+                              end_time TIME NOT NULL,
+                              FOREIGN KEY (room_id) REFERENCES rooms(id)
 );
 
 

@@ -2,20 +2,6 @@ version: '3'
 
 services:
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8087:8080"
-    environment:
-      - DB_HOST=127.0.0.1
-      - DB_PORT=3306
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=projetgo
-    depends_on:
-      - database
   database:
     image: mysql:8.0.33
     volumes:
