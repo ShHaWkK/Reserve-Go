@@ -67,11 +67,11 @@ func main() {
 				log.Printf("Failed to export reservations as JSON: %v", err)
 			}
 		case "12":
-			fmt.Println("Saisissez la date")
+			fmt.Println("Saisissez la date ( AAAA-MM-JJ) ")
 			fmt.Scanln(&date)
-			fmt.Println("Saisissez l'heure de début")
+			fmt.Println("Saisissez l'heure de début ( HH:MM:SS) ")
 			fmt.Scanln(&startTime)
-			fmt.Println("Saisissez l'heure de fin")
+			fmt.Println("Saisissez l'heure de fin (HH:MM:SS) ")
 			fmt.Scanln(&endTime)
 			_, listErr := roomlogic.ListAvailableRooms(db, date, startTime, endTime, scanner)
 			if listErr != nil {
